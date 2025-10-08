@@ -10,10 +10,7 @@
       @submit="restoreHandler"
       @cancel="restoreDialog = false"
     >
-      <p
-        class="kmodal-confirmation-content"
-        :style="{ color: $themeTokens.text }"
-      >
+      <p>
         {{ $tr('restoreChannelMessage', { name: name }) }}
       </p>
     </KModal>
@@ -27,7 +24,7 @@
       @submit="makePublicHandler"
       @cancel="makePublicDialog = false"
     >
-      <p class="kmodal-confirmation-content">{{ $tr('makePublicMessage', { name: name }) }}</p>
+      <p>{{ $tr('makePublicMessage', { name: name }) }}</p>
     </KModal>
 
     <KModal
@@ -39,7 +36,7 @@
       @submit="makePrivateHandler"
       @cancel="makePrivateDialog = false"
     >
-      <p class="kmodal-confirmation-content">{{ $tr('makePrivateMessage', { name: name }) }}</p>
+      <p>{{ $tr('makePrivateMessage', { name: name }) }}</p>
     </KModal>
 
     <KModal
@@ -51,10 +48,7 @@
       @submit="deleteHandler"
       @cancel="deleteDialog = false"
     >
-      <p
-        class="kmodal-confirmation-content"
-        :style="{ color: $themeTokens.text }"
-      >
+      <p>
         {{ $tr('permanentDeleteMessage', { name: name }) }}
       </p>
     </KModal>
@@ -68,7 +62,7 @@
       @submit="softDeleteHandler"
       @cancel="softDeleteDialog = false"
     >
-      <p class="kmodal-confirmation-content">{{ $tr('softDeleteMessage', { name: name }) }}</p>
+      <p>{{ $tr('softDeleteMessage', { name: name }) }}</p>
     </KModal>
 
     <BaseMenu>
@@ -275,17 +269,4 @@
 </script>
 
 
-<style lang="scss" scoped>
-
-  .kmodal-confirmation-content {
-    text-align: left;
-    white-space: normal;
-  }
-
-  ::v-deep .title {
-    font-weight: bold;
-    color: #212121;
-    text-align: left;
-  }
-
-</style>
+<style lang="scss" scoped></style>
