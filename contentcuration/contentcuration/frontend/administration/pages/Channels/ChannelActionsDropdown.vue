@@ -2,67 +2,15 @@
 
   <div>
     <KModal
-      v-if="restoreDialog"
-      :title="$tr('restoreChannelTitle')"
-      :submitText="$tr('restoreAction')"
+      v-if="activeDialog"
+      :title="dialogConfig.title"
+      :submitText="dialogConfig.submitText"
       :cancelText="$tr('cancelAction')"
-      data-test="confirm-restore"
-      @submit="restoreHandler"
-      @cancel="restoreDialog = false"
+      :data-test="dialogConfig.testId"
+      @submit="handleSubmit"
+      @cancel="activeDialog = null"
     >
-      <p>
-        {{ $tr('restoreChannelMessage', { name: name }) }}
-      </p>
-    </KModal>
-
-    <KModal
-      v-if="makePublicDialog"
-      :title="$tr('makePublicTitle')"
-      :submitText="$tr('makePublicAction')"
-      :cancelText="$tr('cancelAction')"
-      data-test="confirm-public"
-      @submit="makePublicHandler"
-      @cancel="makePublicDialog = false"
-    >
-      <p>{{ $tr('makePublicMessage', { name: name }) }}</p>
-    </KModal>
-
-    <KModal
-      v-if="makePrivateDialog"
-      :title="$tr('makePrivateTitle')"
-      :submitText="$tr('makePrivateAction')"
-      :cancelText="$tr('cancelAction')"
-      data-test="confirm-private"
-      @submit="makePrivateHandler"
-      @cancel="makePrivateDialog = false"
-    >
-      <p>{{ $tr('makePrivateMessage', { name: name }) }}</p>
-    </KModal>
-
-    <KModal
-      v-if="deleteDialog"
-      :title="$tr('permanentDeleteTitle')"
-      :submitText="$tr('permanentDeleteAction')"
-      :cancelText="$tr('cancelAction')"
-      data-test="confirm-delete"
-      @submit="deleteHandler"
-      @cancel="deleteDialog = false"
-    >
-      <p>
-        {{ $tr('permanentDeleteMessage', { name: name }) }}
-      </p>
-    </KModal>
-
-    <KModal
-      v-if="softDeleteDialog"
-      :title="$tr('softDeleteTitle')"
-      :submitText="$tr('softDeleteAction')"
-      :cancelText="$tr('cancelAction')"
-      data-test="confirm-softdelete"
-      @submit="softDeleteHandler"
-      @cancel="softDeleteDialog = false"
-    >
-      <p>{{ $tr('softDeleteMessage', { name: name }) }}</p>
+      <p>{{ dialogConfig.message }}</p>
     </KModal>
 
     <BaseMenu>
@@ -82,13 +30,13 @@
         <template v-if="channel.deleted">
           <VListTile
             data-test="restore"
-            @click="restoreDialog = true"
+            @click="openDialog('restore')"
           >
             <VListTileTitle>Restore</VListTileTitle>
           </VListTile>
           <VListTile
             data-test="delete"
-            @click="deleteDialog = true"
+            @click="openDialog('permanentDelete')"
           >
             <VListTileTitle>Delete permanently</VListTileTitle>
           </VListTile>
@@ -115,21 +63,21 @@
           <VListTile
             v-if="channel.public"
             data-test="private"
-            @click="makePrivateDialog = true"
+            @click="openDialog('makePrivate')"
           >
             <VListTileTitle>Make private</VListTileTitle>
           </VListTile>
           <VListTile
             v-else
             data-test="public"
-            @click="makePublicDialog = true"
+            @click="openDialog('makePublic')"
           >
             <VListTileTitle>Make public</VListTileTitle>
           </VListTile>
           <VListTile
             v-if="!channel.public"
             data-test="softdelete"
-            @click="softDeleteDialog = true"
+            @click="openDialog('softDelete')"
           >
             <VListTileTitle>Delete channel</VListTileTitle>
           </VListTile>
@@ -157,11 +105,7 @@
       },
     },
     data: () => ({
-      deleteDialog: false,
-      makePublicDialog: false,
-      makePrivateDialog: false,
-      restoreDialog: false,
-      softDeleteDialog: false,
+      activeDialog: null,
     }),
     computed: {
       ...mapGetters('channel', ['getChannel']),
@@ -179,6 +123,46 @@
           },
         };
       },
+      dialogConfig() {
+        const configs = {
+          restore: {
+            title: this.$tr('restoreChannelTitle'),
+            submitText: this.$tr('restoreAction'),
+            message: this.$tr('restoreChannelMessage', { name: this.name }),
+            testId: 'confirm-restore',
+            handler: this.restoreHandler,
+          },
+          makePublic: {
+            title: this.$tr('makePublicTitle'),
+            submitText: this.$tr('makePublicAction'),
+            message: this.$tr('makePublicMessage', { name: this.name }),
+            testId: 'confirm-public',
+            handler: this.makePublicHandler,
+          },
+          makePrivate: {
+            title: this.$tr('makePrivateTitle'),
+            submitText: this.$tr('makePrivateAction'),
+            message: this.$tr('makePrivateMessage', { name: this.name }),
+            testId: 'confirm-private',
+            handler: this.makePrivateHandler,
+          },
+          permanentDelete: {
+            title: this.$tr('permanentDeleteTitle'),
+            submitText: this.$tr('permanentDeleteAction'),
+            message: this.$tr('permanentDeleteMessage', { name: this.name }),
+            testId: 'confirm-delete',
+            handler: this.deleteHandler,
+          },
+          softDelete: {
+            title: this.$tr('softDeleteTitle'),
+            submitText: this.$tr('softDeleteAction'),
+            message: this.$tr('softDeleteMessage', { name: this.name }),
+            testId: 'confirm-softdelete',
+            handler: this.softDeleteHandler,
+          },
+        };
+        return configs[this.activeDialog] || {};
+      },
     },
     methods: {
       ...mapActions('channelAdmin', [
@@ -186,6 +170,15 @@
         'deleteChannel',
         'updateChannel',
       ]),
+      openDialog(type) {
+        this.activeDialog = type;
+      },
+      handleSubmit() {
+        if (this.dialogConfig.handler) {
+          this.dialogConfig.handler();
+        }
+        this.activeDialog = null;
+      },
       async downloadPDF() {
         this.$store.dispatch('showSnackbarSimple', 'Generating PDF...');
         const channelList = await this.getAdminChannelListDetails([this.channel.id]);
@@ -197,7 +190,6 @@
         return this.generateChannelsCSV(channelList);
       },
       restoreHandler() {
-        this.restoreDialog = false;
         this.updateChannel({
           id: this.channelId,
           deleted: false,
@@ -206,7 +198,6 @@
         });
       },
       softDeleteHandler() {
-        this.softDeleteDialog = false;
         this.updateChannel({
           id: this.channelId,
           deleted: true,
@@ -215,14 +206,12 @@
         });
       },
       deleteHandler() {
-        this.deleteDialog = false;
         this.$emit('deleted');
         return this.deleteChannel(this.channelId).then(() => {
           this.$store.dispatch('showSnackbarSimple', 'Channel deleted permanently');
         });
       },
       makePublicHandler() {
-        this.makePublicDialog = false;
         this.updateChannel({
           id: this.channelId,
           isPublic: true,
@@ -231,7 +220,6 @@
         });
       },
       makePrivateHandler() {
-        this.makePrivateDialog = false;
         this.updateChannel({
           id: this.channelId,
           isPublic: false,
